@@ -1,0 +1,22 @@
+{% extends "base.html" %}{% block title %}Sign in{% endblock %}
+{% block content %}
+<div class="flex min-h-[70vh] items-center justify-center">
+  <div class="w-full max-w-sm overflow-hidden rounded border border-slate-100 bg-white shadow-card">
+    <div class="h-1.5 bg-lime-400"></div>
+    <div class="p-6">
+      <h1 class="text-lg font-semibold">Camp Health Records System</h1>
+      <p class="mb-1 mt-1 text-xs text-slate-500">Cloud edition &mdash; Just Footprints Foundation</p>
+      <p class="mb-6 text-xs font-medium text-clinical-500">Camp Footprints</p>
+      <form method="post" class="space-y-4">{% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+        <div><label class="mb-1 block text-sm font-medium" for="id_username">Username</label>
+          <input id="id_username" name="username" type="text" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" autofocus autocomplete="username"></div>
+        <div><label class="mb-1 block text-sm font-medium" for="id_password">Password</label>
+          <input id="id_password" name="password" type="password" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" autocomplete="current-password"></div>
+        {% if form.errors %}<p class="text-xs font-medium text-alert-600" role="alert">Login failed. Check your username and password.</p>{% endif %}
+        <button class="w-full rounded bg-clinical-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-clinical-600">Sign in</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

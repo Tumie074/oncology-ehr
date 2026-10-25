@@ -1,0 +1,24 @@
+{% for title, fields in form.get_sections %}
+<fieldset class="space-y-4 rounded border border-slate-100 bg-white p-5 shadow-card">
+  <legend class="px-2 text-sm font-semibold text-clinical-600">{{ title }}</legend>
+  <div class="grid gap-4 sm:grid-cols-2">
+  {% for field in fields %}
+    {% if field.field.widget.input_type == 'hidden' %}
+      {% include "partials/signature.html" with field=field %}
+    {% else %}
+    <div class="{% if field.field.widget.input_type == 'textarea' or field.name == 'address' %}sm:col-span-2{% endif %}{% if field.field.widget.input_type == 'checkbox' %} flex items-start gap-2 sm:col-span-2{% endif %}">
+      {% if field.field.widget.input_type == 'checkbox' %}
+        {{ field }}<label for="{{ field.id_for_label }}" class="text-sm font-medium text-ink">{{ field.label }}</label>
+      {% else %}
+        <label for="{{ field.id_for_label }}" class="mb-1 block text-sm font-medium text-ink">{{ field.label }}{% if field.field.required %} <span class="text-alert-500" aria-hidden="true">*</span>{% endif %}</label>
+        {{ field }}
+      {% endif %}
+      {% if field.help_text %}<p class="mt-1 text-xs text-slate-500">{{ field.help_text }}</p>{% endif %}
+      {% for e in field.errors %}<p class="mt-1 text-xs font-medium text-alert-600" role="alert">{{ e }}</p>{% endfor %}
+    </div>
+    {% endif %}
+  {% endfor %}
+  </div>
+</fieldset>
+{% endfor %}
+{% for e in form.non_field_errors %}<p class="text-xs font-medium text-alert-600" role="alert">{{ e }}</p>{% endfor %}

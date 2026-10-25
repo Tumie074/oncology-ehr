@@ -1,0 +1,11 @@
+{% if m.administered_time %}
+  <span class="whitespace-nowrap rounded px-2 py-0.5 text-xs font-semibold {% if m.missed %}bg-amber-50 text-amber-600{% else %}bg-confirm-50 text-confirm-600{% endif %}">{{ m.status }} {{ m.administered_time|date:"H:i" }}</span>
+{% else %}
+  <span class="flex items-center gap-2">
+    <span class="whitespace-nowrap rounded px-2 py-0.5 text-xs font-semibold {% if m.missed %}bg-alert-50 text-alert-600{% else %}bg-slate-100 text-slate-700{% endif %}">{{ m.status }}</span>
+    {% if 'EDIT_CLINICAL_RECORDS' in chrs_perms %}
+    <form method="post" action="{% url 'administer' m.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+      <button class="rounded bg-confirm-500 px-2.5 py-1 text-xs font-semibold text-white hover:bg-confirm-600">Mark given</button></form>
+    {% endif %}
+  </span>
+{% endif %}

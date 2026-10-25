@@ -1,0 +1,9 @@
+{% extends "base.html" %}{% block title %}{{ cfg.title }}{% endblock %}{% block heading %}{{ cfg.title }}{% endblock %}
+{% block content %}
+<div class="mb-4 flex items-center justify-between"><a href="{% url 'forms_hub' %}" class="text-sm font-semibold text-clinical-600 hover:underline">&larr; All forms</a>
+  {% if can_new %}<a href="{% url 'form_new' kind %}" class="rounded bg-clinical-500 px-4 py-2 text-sm font-semibold text-white hover:bg-clinical-600">+ New</a>{% endif %}</div>
+<div class="overflow-hidden rounded border border-slate-100 bg-white shadow-card"><table class="w-full text-left text-sm">
+<thead class="bg-slate-100 text-xs uppercase tracking-wide text-slate-700"><tr>{% for h in headers %}<th class="px-4 py-2">{{ h }}</th>{% endfor %}<th class="px-4 py-2"></th></tr></thead><tbody>
+{% for o, vals in rows %}<tr class="border-t border-slate-100 hover:bg-clinical-50">{% for v in vals %}<td class="px-4 py-2.5">{{ v|default:"&mdash;" }}</td>{% endfor %}<td class="px-4 py-2.5 text-right"><a class="font-semibold text-clinical-600 hover:underline" href="{% url 'form_detail' kind o.pk %}">Open</a></td></tr>
+{% empty %}<tr><td colspan="9" class="px-4 py-10 text-center text-slate-500">Nothing filed yet.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

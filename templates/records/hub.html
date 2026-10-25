@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% block title %}Forms{% endblock %}{% block heading %}JFF forms{% endblock %}
+{% block content %}
+<p class="mb-5 text-sm text-slate-700">The seven Just Footprints Foundation paper forms, digitised. Every form is signed on screen and every filing is recorded in the audit log.</p>
+<div class="grid gap-3 sm:grid-cols-2">
+  <a href="{% url 'register_patient' %}" class="rounded border border-slate-100 bg-white p-4 shadow-card hover:border-clinical-500 hover:bg-clinical-50 {% if 'EDIT_CLINICAL_RECORDS' not in chrs_perms %}pointer-events-none opacity-60{% endif %}">
+    <p class="text-sm font-semibold">1. Camper Registration and Indemnity</p><p class="text-xs text-slate-500">Full registration profile with signed indemnity and consent. {% if 'EDIT_CLINICAL_RECORDS' not in chrs_perms %}(Physician / Nurse only){% endif %}</p></a>
+  {% for c in cards %}
+  <div class="rounded border border-slate-100 bg-white p-4 shadow-card">
+    <p class="text-sm font-semibold">{{ forloop.counter|add:1 }}. {{ c.title }}</p>
+    <p class="mb-3 text-xs text-slate-500">{{ c.blurb }}</p>
+    <div class="flex items-center gap-2 text-xs font-semibold">
+      {% if c.can_new %}<a href="{% url 'form_new' c.kind %}" class="rounded bg-clinical-500 px-3 py-1.5 text-white hover:bg-clinical-600">New</a>{% endif %}
+      {% if c.can_view %}<a href="{% url 'form_list' c.kind %}" class="rounded border border-slate-300 bg-white px-3 py-1.5 text-clinical-600 hover:bg-clinical-50">View filed ({{ c.count }})</a>{% else %}<span class="text-slate-500">Restricted for your role</span>{% endif %}
+    </div>
+  </div>
+  {% endfor %}
+  <a href="{% url 'medication_schedule' %}" class="rounded border border-slate-100 bg-white p-4 shadow-card hover:border-clinical-500 hover:bg-clinical-50">
+    <p class="text-sm font-semibold">7. Medications and Treatments (weekly record)</p><p class="text-xs text-slate-500">Open a patient and choose <em>Weekly medication record</em>. Missed doses are flagged automatically.</p></a>
+</div>
+{% endblock %}

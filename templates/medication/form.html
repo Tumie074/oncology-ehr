@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% block title %}Schedule dose{% endblock %}{% block heading %}Schedule a dose{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-2xl space-y-4">
+  {% include "partials/alert_banner.html" %}
+  <form method="post" class="space-y-4 rounded border border-slate-100 bg-white p-6 shadow-card">{% csrf_token %}
+    <p class="border-b border-slate-100 pb-3 text-sm font-semibold">Dose for {{ patient.full_name }} <span class="font-mono text-xs font-normal text-slate-500">{{ patient.case_number }}</span></p>
+    {% include "partials/field.html" %}
+    <div class="flex gap-2 border-t border-slate-100 pt-4">
+      <button class="rounded bg-clinical-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-clinical-600">Schedule dose</button>
+      <a href="{% url 'patient_detail' patient.pk %}" class="rounded border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

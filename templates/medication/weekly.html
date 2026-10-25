@@ -1,0 +1,39 @@
+{% extends "base.html" %}{% block title %}Weekly medication record{% endblock %}{% block heading %}Medications and treatments{% endblock %}
+{% block content %}
+<div class="space-y-4">
+  {% include "partials/alert_banner.html" %}
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <div><h2 class="text-sm font-semibold">{{ patient.full_name }} <span class="font-mono text-xs font-normal text-slate-500">{{ patient.case_number }}</span></h2>
+      <p class="text-xs text-slate-500">Week of {{ days.0|date:"d M" }} to {{ days.6|date:"d M Y" }}</p></div>
+    <div class="flex items-center gap-2 text-xs font-semibold">
+      <a href="?w={{ offset|add:'-1' }}" class="rounded border border-slate-300 bg-white px-3 py-1.5 text-clinical-600 hover:bg-clinical-50">&larr; Previous week</a>
+      <a href="?w=0" class="rounded border border-slate-300 bg-white px-3 py-1.5 text-clinical-600 hover:bg-clinical-50">This week</a>
+      <a href="?w={{ offset|add:'1' }}" class="rounded border border-slate-300 bg-white px-3 py-1.5 text-clinical-600 hover:bg-clinical-50">Next week &rarr;</a>
+      {% if 'EDIT_CLINICAL_RECORDS' in chrs_perms %}<a href="{% url 'add_medication' patient.pk %}" class="rounded bg-clinical-500 px-3 py-1.5 text-white hover:bg-clinical-600">+ Schedule medication</a>{% endif %}
+    </div>
+  </div>
+  <div class="overflow-x-auto rounded border border-slate-100 bg-white shadow-card">
+  <table class="w-full min-w-[820px] text-left text-xs">
+    <thead class="bg-slate-100 text-slate-700"><tr><th class="px-3 py-2">Medication</th>{% for d in days %}<th class="px-2 py-2 {% if d == today %}bg-clinical-50 text-clinical-600{% endif %}">{{ d|date:"D d" }}</th>{% endfor %}</tr></thead>
+    <tbody>
+    {% for r in grid %}
+    <tr class="border-t border-slate-100 align-top">
+      <td class="px-3 py-2"><p class="text-sm font-medium">{{ r.name }}</p><p class="text-slate-500">{{ r.dose }} &middot; {{ r.time }}</p></td>
+      {% for cell in r.cells %}<td class="px-2 py-2">
+        {% for m in cell %}
+          {% if m.administered_time %}<span class="inline-block rounded px-1.5 py-0.5 font-semibold {% if m.missed %}bg-amber-50 text-amber-600{% else %}bg-confirm-50 text-confirm-600{% endif %}" title="{{ m.administered_by }}">{{ m.status }} {{ m.administered_time|date:"H:i" }}</span>
+          {% elif m.missed %}<span class="inline-block rounded bg-alert-50 px-1.5 py-0.5 font-bold text-alert-600">MISSED</span>
+          {% else %}<span class="inline-block rounded bg-slate-100 px-1.5 py-0.5 text-slate-700">Due</span>{% endif %}
+          {% if not m.administered_time and 'EDIT_CLINICAL_RECORDS' in chrs_perms %}
+          <form method="post" action="{% url 'administer' m.pk %}" class="mt-1 space-y-1">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <input name="note" placeholder="Note (optional)" class="w-full rounded border border-slate-300 px-1.5 py-1 text-xs">
+            <button class="w-full rounded bg-confirm-500 px-1.5 py-1 font-semibold text-white hover:bg-confirm-600">Mark given</button></form>{% endif %}
+          {% if m.notes %}<p class="mt-1 text-slate-500">{{ m.notes }}</p>{% endif %}
+        {% endfor %}
+      </td>{% endfor %}
+    </tr>
+    {% empty %}<tr><td colspan="8" class="px-4 py-10 text-center text-sm text-slate-500">No medication scheduled this week.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endblock %}

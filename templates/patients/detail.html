@@ -1,0 +1,89 @@
+{% extends "base.html" %}{% block title %}{{ patient.full_name }}{% endblock %}{% block heading %}Patient record{% endblock %}
+{% block content %}
+<div class="space-y-4">
+  {% include "partials/alert_banner.html" %}
+  <div class="rounded border border-slate-100 bg-white p-5 shadow-card">
+    <div class="mb-4 flex items-center justify-between gap-4 border-b border-slate-100 pb-3">
+      <div class="flex items-center gap-4">
+        <div class="flex h-12 w-12 items-center justify-center rounded-full bg-clinical-50 text-sm font-semibold text-clinical-600">{{ patient.first_name|slice:":1" }}{{ patient.last_name|slice:":1" }}</div>
+        <div><h2 class="text-sm font-semibold">{{ patient.full_name }}</h2><p class="font-mono text-xs text-slate-500">{{ patient.case_number }}</p></div>
+      </div>
+      {% if 'EDIT_CLINICAL_RECORDS' in chrs_perms %}<a href="{% url 'patient_edit' patient.pk %}" class="rounded border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-clinical-600 hover:bg-clinical-50">Edit profile</a>{% endif %}
+    </div>
+    <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-4">
+      <div><dt class="text-xs text-slate-500">Date of birth</dt><dd>{{ patient.date_of_birth|date:"d M Y" }}</dd></div>
+      <div><dt class="text-xs text-slate-500">Diagnosis</dt><dd>{{ patient.diagnosis }}</dd></div>
+      <div><dt class="text-xs text-slate-500">Guardian</dt><dd>{{ patient.guardian_name }}</dd></div>
+      <div><dt class="text-xs text-slate-500">Guardian contact</dt><dd class="font-mono text-xs">{{ patient.guardian_contact }}</dd></div>
+    </dl>
+  </div>
+
+  <section class="rounded border border-slate-100 bg-white p-5 shadow-card">
+    <h3 class="mb-3 border-b border-slate-100 pb-2 text-sm font-semibold">Registration details</h3>
+    <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-4">
+      {% if patient.sex %}<div><dt class="text-xs text-slate-500">Sex</dt><dd>{{ patient.get_sex_display }}</dd></div>{% endif %}
+      {% if patient.language %}<div><dt class="text-xs text-slate-500">Language</dt><dd>{{ patient.language }}</dd></div>{% endif %}
+      {% if patient.religion %}<div><dt class="text-xs text-slate-500">Religion</dt><dd>{{ patient.religion }}</dd></div>{% endif %}
+      {% if patient.tshirt_size %}<div><dt class="text-xs text-slate-500">T-shirt size</dt><dd>{{ patient.tshirt_size }}</dd></div>{% endif %}
+      {% if patient.emergency_contact_name %}<div><dt class="text-xs text-slate-500">Emergency contact</dt><dd>{{ patient.emergency_contact_name }} <span class="font-mono text-xs">{{ patient.emergency_contact_cell }}</span></dd></div>{% endif %}
+      {% if patient.clinic_file_number %}<div><dt class="text-xs text-slate-500">Clinic file number</dt><dd class="font-mono text-xs">{{ patient.clinic_file_number }}</dd></div>{% endif %}
+      {% if patient.tb_history %}<div><dt class="text-xs text-slate-500">TB history</dt><dd>{{ patient.get_tb_history_display }}</dd></div>{% endif %}
+      {% if patient.tb_flags %}<div><dt class="text-xs text-slate-500">TB screening flags</dt><dd class="font-semibold text-amber-600">{{ patient.tb_flags|join:", " }}</dd></div>{% endif %}
+      {% if patient.current_medication %}<div class="col-span-2"><dt class="text-xs text-slate-500">Current medication</dt><dd class="whitespace-pre-line">{{ patient.current_medication }}</dd></div>{% endif %}
+      {% if patient.adherence_barriers %}<div class="col-span-2"><dt class="text-xs text-slate-500">Adherence barriers</dt><dd>{{ patient.adherence_barriers }}</dd></div>{% endif %}
+      {% if patient.dietary_requirements %}<div><dt class="text-xs text-slate-500">Dietary</dt><dd>{{ patient.dietary_requirements }}</dd></div>{% endif %}
+      {% if patient.assistance_needs %}<div><dt class="text-xs text-slate-500">Needs help with</dt><dd>{{ patient.assistance_needs|join:", " }}</dd></div>{% endif %}
+      {% if patient.mobility_aids or patient.prosthesis or patient.eyesight or patient.hearing %}<div class="col-span-2"><dt class="text-xs text-slate-500">Accessibility</dt><dd>{% if patient.eyesight %}Eyesight: {{ patient.eyesight }}. {% endif %}{% if patient.hearing %}Hearing: {{ patient.hearing }}. {% endif %}{% if patient.mobility_aids %}Mobility aids: {{ patient.mobility_aids }}. {% endif %}{% if patient.prosthesis %}Prosthesis: {{ patient.prosthesis }}.{% endif %}</dd></div>{% endif %}
+      {% if patient.behavioural_notes %}<div class="col-span-2"><dt class="text-xs text-slate-500">Behavioural / psychosocial needs</dt><dd>{{ patient.behavioural_notes }}</dd></div>{% endif %}
+      <div class="col-span-2"><dt class="text-xs text-slate-500">Indemnity and consent</dt><dd>{% if patient.indemnity_signed %}<span class="font-semibold text-confirm-600">Signed {{ patient.indemnity_signed_at|date:"d M Y" }}</span> (witness: {{ patient.indemnity_witness_name }}){% else %}<span class="text-slate-500">Not signed on this system</span>{% endif %}</dd></div>
+    </dl>
+  </section>
+
+  <section class="rounded border border-slate-100 bg-white p-5 shadow-card">
+    <h3 class="mb-3 border-b border-slate-100 pb-2 text-sm font-semibold">Forms for {{ patient.first_name }}</h3>
+    <div class="flex flex-wrap gap-2 text-xs font-semibold">
+      <a href="{% url 'patient_medlog' patient.pk %}" class="rounded border border-slate-300 bg-white px-3 py-1.5 text-clinical-600 hover:bg-clinical-50">Weekly medication record</a>
+      {% if 'EDIT_CLINICAL_RECORDS' in chrs_perms %}
+      <a href="{% url 'form_new' 'checkin' %}?patient={{ patient.pk }}" class="rounded border border-slate-300 bg-white px-3 py-1.5 text-clinical-600 hover:bg-clinical-50">Medication check-in</a>
+      <a href="{% url 'form_new' 'medshack' %}?patient={{ patient.pk }}" class="rounded border border-slate-300 bg-white px-3 py-1.5 text-clinical-600 hover:bg-clinical-50">MedShack visit</a>{% endif %}
+      {% if 'FILE_INCIDENT_REPORT' in chrs_perms %}<a href="{% url 'form_new' 'nearmiss' %}?patient={{ patient.pk }}" class="rounded border border-amber-500 bg-amber-50 px-3 py-1.5 text-amber-600 hover:bg-amber-100">File near-miss report</a>{% endif %}
+    </div>
+    {% if checkins or visits or nearmisses %}
+    <ul class="mt-3 space-y-1 text-xs text-slate-700">
+      {% for c in checkins %}<li>Check-in <a class="font-semibold text-clinical-600 hover:underline" href="{% url 'form_detail' 'checkin' c.pk %}">{{ c.assessed_at|date:"d M Y H:i" }}</a></li>{% endfor %}
+      {% for v in visits %}<li>MedShack visit <a class="font-semibold text-clinical-600 hover:underline" href="{% url 'form_detail' 'medshack' v.pk %}">{{ v.visit_at|date:"d M Y H:i" }}</a>: {{ v.reason|truncatechars:60 }}</li>{% endfor %}
+      {% for n in nearmisses %}<li class="text-amber-600">Near miss <a class="font-semibold underline" href="{% url 'form_detail' 'nearmiss' n.pk %}">{{ n.event_at|date:"d M Y H:i" }}</a></li>{% endfor %}
+    </ul>{% endif %}
+  </section>
+
+  <div class="grid gap-4 md:grid-cols-2">
+    <section class="rounded border border-slate-100 bg-white p-5 shadow-card">
+      <div class="mb-3 flex items-center justify-between border-b border-slate-100 pb-2">
+        <h3 class="text-sm font-semibold">Medication</h3>
+        <a href="{% url 'patient_medlog' patient.pk %}" class="text-xs font-semibold text-clinical-600 hover:underline">Weekly record</a>
+      </div>
+      {% for m in meds %}
+        <div class="flex items-center justify-between gap-2 border-b border-slate-100 py-2 last:border-0">
+          <div><p class="text-sm font-medium">{{ m.medication_name }} <span class="text-slate-500">{{ m.dosage }}</span></p>
+            <p class="font-mono text-xs text-slate-500">{{ m.scheduled_time|date:"D d M H:i" }}{% if m.administered_by %} &middot; {{ m.administered_by }}{% endif %}</p></div>
+          {% include "partials/dose_action.html" with m=m next=request.path %}
+        </div>
+      {% empty %}<p class="text-sm text-slate-500">No doses scheduled.</p>{% endfor %}
+    </section>
+    <section class="rounded border border-slate-100 bg-white p-5 shadow-card">
+      <div class="mb-3 flex items-center justify-between border-b border-slate-100 pb-2">
+        <h3 class="text-sm font-semibold">Camp notes</h3>
+        {% if 'EDIT_CLINICAL_RECORDS' in chrs_perms %}<a href="{% url 'add_note' patient.pk %}" class="text-xs font-semibold text-clinical-600 hover:underline">+ Add note</a>{% endif %}
+      </div>
+      {% for n in notes %}
+        <div class="border-b border-slate-100 py-2 last:border-0">
+          <p class="text-sm">{{ n.observation }}</p>
+          {% if n.incident_report %}<p class="mt-1 rounded border border-amber-500 bg-amber-50 px-2 py-1 text-xs text-amber-600"><strong>Incident:</strong> {{ n.incident_report }}</p>{% endif %}
+          {% if n.adherence_barrier_noted %}<p class="mt-1 text-xs font-semibold text-amber-600">Adherence barrier noted</p>{% endif %}
+          <p class="font-mono text-xs text-slate-500">{{ n.date_recorded|date:"d M Y" }} &middot; {{ n.recorded_by }}</p>
+        </div>
+      {% empty %}<p class="text-sm text-slate-500">No camp notes yet.</p>{% endfor %}
+    </section>
+  </div>
+</div>
+{% endblock %}

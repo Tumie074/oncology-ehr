@@ -1,0 +1,25 @@
+{% extends "base.html" %}{% block title %}{{ cfg.title }}{% endblock %}{% block heading %}{{ cfg.title }}{% endblock %}
+{% block content %}
+<form method="post" class="mx-auto max-w-3xl space-y-4">{% csrf_token %}
+  {% if kind == 'nearmiss' %}<p class="rounded border border-amber-500 bg-amber-50 px-4 py-3 text-xs text-amber-600"><strong>Restricted.</strong> Once filed, this report cannot be edited or deleted.</p>{% endif %}
+  {% if kind == 'crew-checkin' or kind == 'crew-indemnity' %}<p class="rounded border border-slate-300 bg-white px-4 py-3 text-xs text-slate-700">Staff records are stored separately from camper records.</p>{% endif %}
+  {% include "partials/fieldsets.html" %}
+  {% if kind == 'medshack' %}
+  <fieldset class="space-y-3 rounded border border-slate-100 bg-white p-5 shadow-card">
+    <legend class="px-2 text-sm font-semibold text-clinical-600">Treatments</legend>
+    <table class="w-full text-sm" id="treat"><thead class="text-left text-xs text-slate-500"><tr><th class="pb-1">Time</th><th class="pb-1">Treatment</th><th class="pb-1">Outcome</th><th></th></tr></thead><tbody>
+    {% for r in treat_rows %}<tr><td class="pr-2 pb-2"><input name="treat_time" value="{{ r.time }}" class="w-full rounded border border-slate-300 p-2 text-sm"></td>
+      <td class="pr-2 pb-2"><input name="treat_treatment" value="{{ r.treatment }}" class="w-full rounded border border-slate-300 p-2 text-sm"></td>
+      <td class="pr-2 pb-2"><input name="treat_outcome" value="{{ r.outcome }}" class="w-full rounded border border-slate-300 p-2 text-sm"></td>
+      <td class="pb-2"><button type="button" class="text-xs font-semibold text-alert-600" onclick="var t=this.closest('tr'); if(document.querySelectorAll('#treat tbody tr').length>1) t.remove()">Remove row</button></td></tr>{% endfor %}
+    </tbody></table>
+    <button type="button" class="text-sm font-semibold text-clinical-600 hover:underline" onclick="var b=document.querySelector('#treat tbody'); var r=b.rows[0].cloneNode(true); r.querySelectorAll('input').forEach(function(i){i.value=''}); b.appendChild(r)">+ Add treatment row</button>
+  </fieldset>
+  {% endif %}
+  <div class="flex gap-2">
+    <button class="rounded bg-clinical-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-clinical-600">{% if kind == 'nearmiss' %}File report{% else %}Save{% endif %}</button>
+    <a href="{% url 'forms_hub' %}" class="rounded border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100">Cancel</a>
+  </div>
+</form>
+{% include "partials/signature_js.html" %}
+{% endblock %}

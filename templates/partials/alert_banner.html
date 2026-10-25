@@ -1,0 +1,15 @@
+{% if patient.has_alerts %}
+<div class="rounded border-2 border-alert-500 bg-alert-50 p-4" role="alert">
+  <div class="mb-2 flex items-center justify-between border-b border-alert-100 pb-2">
+    <h3 class="text-sm font-bold uppercase tracking-wider text-alert-600">&#9888; Critical clinical alerts</h3>
+    <span class="rounded bg-alert-100 px-2 py-0.5 text-xs font-bold uppercase text-alert-600">High visibility</span>
+  </div>
+  <p class="mb-2 text-sm text-alert-600"><span class="font-bold">Primary diagnosis:</span> {{ patient.diagnosis }}</p>
+  <div class="text-sm text-alert-600"><span class="font-bold">Known allergies:</span>
+    {% if patient.allergy_list %}<div class="mt-1 flex flex-wrap gap-1.5">{% for a in patient.allergy_list %}<span class="inline-flex rounded bg-alert-500 px-2.5 py-0.5 text-xs font-bold text-white">{{ a }}</span>{% endfor %}</div>{% else %} <em>None reported</em>{% endif %}
+  </div>
+  {% if patient.medical_notes %}<p class="mt-2 border-t border-alert-100 pt-2 text-xs text-alert-600"><span class="font-bold">Clinical precaution note:</span> {{ patient.medical_notes }}</p>{% endif %}
+</div>
+{% else %}
+<div class="rounded border border-confirm-500 bg-confirm-50 p-4 text-sm text-confirm-600"><span class="font-semibold">Clinical alerts:</span> no known allergies or medical alerts recorded for this patient.</div>
+{% endif %}

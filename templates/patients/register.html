@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% block title %}{{ title }}{% endblock %}{% block heading %}{{ title }}{% endblock %}
+{% block content %}
+<form method="post" class="mx-auto max-w-3xl space-y-4">{% csrf_token %}
+  <p class="text-xs text-slate-500">Fields marked <span class="text-alert-500">*</span> are required. Allergies and precaution notes appear in the red alert banner on the patient record.</p>
+  {% include "partials/fieldsets.html" %}
+  <div class="flex gap-2">
+    <button class="rounded bg-clinical-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-clinical-600">{% if editing %}Save changes{% else %}Register patient{% endif %}</button>
+    <a href="{% url 'patient_list' %}" class="rounded border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100">Cancel</a>
+  </div>
+</form>
+{% include "partials/signature_js.html" %}
+{% endblock %}

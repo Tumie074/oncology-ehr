@@ -1,0 +1,9 @@
+{% extends "base.html" %}{% block title %}Audit log{% endblock %}{% block heading %}Audit log{% endblock %}
+{% block content %}
+<form method="get" class="mb-4 flex gap-2"><input name="q" value="{{ q }}" placeholder="Filter by user, action or detail" class="flex-1 rounded border border-slate-300 bg-white px-3 py-2.5 text-sm"><button class="rounded bg-clinical-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-clinical-600">Filter</button></form>
+<div class="overflow-hidden rounded border border-slate-100 bg-white shadow-card"><table class="w-full text-left text-sm">
+<thead class="bg-slate-100 text-xs uppercase tracking-wide text-slate-700"><tr><th class="px-4 py-2">Time</th><th class="px-4 py-2">User</th><th class="px-4 py-2">Action</th><th class="px-4 py-2">Detail</th><th class="px-4 py-2">IP</th></tr></thead><tbody>
+{% for e in events %}<tr class="border-t border-slate-100"><td class="px-4 py-2 font-mono text-xs">{{ e.timestamp|date:"Y-m-d H:i:s" }}</td><td class="px-4 py-2">{{ e.username|default:"&mdash;" }}</td><td class="px-4 py-2"><span class="rounded px-2 py-0.5 text-xs font-semibold {% if 'DENIED' in e.action or 'FAILED' in e.action %}bg-alert-50 text-alert-600{% else %}bg-clinical-50 text-clinical-700{% endif %}">{{ e.action }}</span></td><td class="px-4 py-2 text-xs">{{ e.detail }}</td><td class="px-4 py-2 font-mono text-xs text-slate-500">{{ e.ip_address|default:"" }}</td></tr>
+{% empty %}<tr><td colspan="5" class="px-4 py-10 text-center text-slate-500">No events.</td></tr>{% endfor %}</tbody></table></div>
+<p class="mt-2 text-xs text-slate-500">Showing the latest 300 events. Events are append-only and cannot be edited or deleted in the admin.</p>
+{% endblock %}

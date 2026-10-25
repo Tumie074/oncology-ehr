@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% block title %}Camp notes{% endblock %}{% block heading %}Camp notes{% endblock %}
+{% block content %}
+<div class="mb-4 flex gap-2 text-sm font-semibold">
+  <a href="{% url 'note_list' %}" class="rounded px-3 py-1.5 {% if not incidents_only %}bg-clinical-500 text-white{% else %}border border-slate-300 bg-white text-slate-700{% endif %}">All notes</a>
+  <a href="?incidents=1" class="rounded px-3 py-1.5 {% if incidents_only %}bg-amber-500 text-white{% else %}border border-slate-300 bg-white text-slate-700{% endif %}">Incidents only</a>
+</div>
+<div class="space-y-3">
+{% for n in notes %}
+  <article class="rounded border {% if n.incident_report %}border-amber-500{% else %}border-slate-100{% endif %} bg-white p-4 shadow-card">
+    <div class="flex items-center justify-between"><a class="text-sm font-semibold text-clinical-600 hover:underline" href="{% url 'patient_detail' n.patient.pk %}">{{ n.patient.full_name }}</a><span class="font-mono text-xs text-slate-500">{{ n.date_recorded|date:"d M Y" }} &middot; {{ n.recorded_by }}</span></div>
+    <p class="mt-1 text-sm">{{ n.observation }}</p>
+    {% if n.incident_report %}<p class="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-600"><strong>Incident report:</strong> {{ n.incident_report }}</p>{% endif %}
+    {% if n.adherence_barrier_noted %}<p class="mt-1 text-xs font-semibold text-amber-600">Adherence barrier noted</p>{% endif %}
+  </article>
+{% empty %}<p class="rounded border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">No camp notes recorded.</p>{% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "base.html" %}{% block title %}Medication log{% endblock %}{% block heading %}Medications and treatments log{% endblock %}
+{% block content %}
+{% if missed %}
+<div role="alert" class="mb-6 rounded border border-alert-500 bg-alert-50 p-4">
+  <p class="mb-2 text-sm font-semibold text-alert-600">&#9888; {{ missed|length }} missed dose{{ missed|length|pluralize }} &mdash; flagged automatically</p>
+  {% for m in missed %}
+  <div class="flex items-center justify-between gap-2 border-t border-alert-100 py-2">
+    <p class="text-sm text-alert-600"><a class="font-semibold underline" href="{% url 'patient_detail' m.patient.pk %}">{{ m.patient.full_name }}</a> &middot; {{ m.medication_name }} {{ m.dosage }} <span class="font-mono text-xs">due {{ m.scheduled_time|date:"D d M H:i" }}</span></p>
+    {% include "partials/dose_action.html" with m=m next=request.path %}
+  </div>{% endfor %}
+</div>
+{% else %}<div class="mb-6 rounded border border-confirm-500 bg-confirm-50 p-4 text-sm font-medium text-confirm-600">No missed doses. Everything due has been recorded.</div>{% endif %}
+
+<div class="grid gap-6 md:grid-cols-2">
+  <section class="rounded border border-slate-100 bg-white p-5 shadow-card">
+    <h2 class="mb-3 border-b border-slate-100 pb-2 text-sm font-semibold">Upcoming</h2>
+    {% for m in upcoming %}
+    <div class="flex items-center justify-between gap-2 border-b border-slate-100 py-2 last:border-0">
+      <p class="text-sm"><a class="font-medium text-clinical-600 hover:underline" href="{% url 'patient_detail' m.patient.pk %}">{{ m.patient.full_name }}</a><br><span class="text-slate-700">{{ m.medication_name }} {{ m.dosage }}</span> <span class="font-mono text-xs text-slate-500">{{ m.scheduled_time|date:"D d M H:i" }}</span></p>
+      {% include "partials/dose_action.html" with m=m next=request.path %}
+    </div>
+    {% empty %}<p class="text-sm text-slate-500">Nothing scheduled.</p>{% endfor %}
+  </section>
+  <section class="rounded border border-slate-100 bg-white p-5 shadow-card">
+    <h2 class="mb-3 border-b border-slate-100 pb-2 text-sm font-semibold">Recently given</h2>
+    {% for m in given %}
+    <div class="flex items-center justify-between gap-2 border-b border-slate-100 py-2 last:border-0">
+      <p class="text-sm"><a class="font-medium text-clinical-600 hover:underline" href="{% url 'patient_detail' m.patient.pk %}">{{ m.patient.full_name }}</a><br><span class="text-slate-700">{{ m.medication_name }} {{ m.dosage }}</span> <span class="font-mono text-xs text-slate-500">by {{ m.administered_by }}</span></p>
+      {% include "partials/dose_action.html" with m=m next=request.path %}
+    </div>
+    {% empty %}<p class="text-sm text-slate-500">No doses recorded yet.</p>{% endfor %}
+  </section>
+</div>
+{% endblock %}

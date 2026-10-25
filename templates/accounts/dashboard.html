@@ -1,0 +1,54 @@
+{% extends "base.html" %}{% block title %}Dashboard{% endblock %}
+{% block content %}
+<form method="get" action="{% url 'patient_list' %}" class="mb-6 flex gap-2">
+  <input name="q" type="text" placeholder="Search by patient ID, name or diagnosis" aria-label="Search patients" class="flex-1 rounded border border-slate-300 bg-white px-3 py-2.5 text-sm placeholder:text-slate-500">
+  <button class="rounded bg-clinical-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-clinical-600">Search</button>
+  {% if 'EDIT_CLINICAL_RECORDS' in chrs_perms %}<a href="{% url 'register_patient' %}" class="whitespace-nowrap rounded border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-clinical-600 hover:bg-clinical-50">+ New patient</a>{% endif %}
+</form>
+
+{% if n_missed %}
+<div role="alert" class="mb-6 rounded border border-alert-500 bg-alert-50 p-4">
+  <p class="text-sm font-semibold text-alert-600">&#9888; {{ n_missed }} missed medication dose{{ n_missed|pluralize }}</p>
+  <ul class="mt-2 space-y-0.5 text-xs text-alert-600">
+    {% for m in missed %}<li><a class="underline" href="{% url 'patient_detail' m.patient.pk %}">{{ m.patient.full_name }}</a> &middot; {{ m.medication_name }} {{ m.dosage }} &middot; due {{ m.scheduled_time|date:"D H:i" }}</li>{% endfor %}
+    {% if n_missed > 8 %}<li>&hellip;and {{ n_missed|add:"-8" }} more &mdash; <a class="underline" href="{% url 'medication_schedule' %}">see the full medication log</a></li>{% endif %}
+  </ul>
+</div>
+{% endif %}
+
+<div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+  <div class="rounded border border-slate-100 bg-white p-4 shadow-card"><p class="text-xs font-medium text-slate-500">Patients</p><p class="mt-1 text-2xl font-semibold">{{ n_patients }}</p></div>
+  <div class="rounded border {% if n_missed %}border-alert-500 bg-alert-50{% else %}border-slate-100 bg-white{% endif %} p-4 shadow-card"><p class="text-xs font-medium {% if n_missed %}text-alert-600{% else %}text-slate-500{% endif %}">Missed doses</p><p class="mt-1 text-2xl font-semibold {% if n_missed %}text-alert-600{% endif %}">{{ n_missed }}</p></div>
+  <div class="rounded border border-slate-100 bg-white p-4 shadow-card"><p class="text-xs font-medium text-slate-500">Camp notes today</p><p class="mt-1 text-2xl font-semibold">{{ n_notes_today }}</p></div>
+  <div class="rounded border {% if n_incidents %}border-amber-500 bg-amber-50{% else %}border-slate-100 bg-white{% endif %} p-4 shadow-card"><p class="text-xs font-medium {% if n_incidents %}text-amber-600{% else %}text-slate-500{% endif %}">Incident reports</p><p class="mt-1 text-2xl font-semibold {% if n_incidents %}text-amber-600{% endif %}">{{ n_incidents }}</p></div>
+</div>
+
+<div class="grid gap-6 md:grid-cols-2">
+  <section class="rounded border border-slate-100 bg-white p-5 shadow-card">
+    <h2 class="mb-3 border-b border-slate-100 pb-2 text-sm font-semibold">Patients with clinical alerts</h2>
+    {% for p in alert_patients %}
+    <a href="{% url 'patient_detail' p.pk %}" class="flex items-center justify-between border-b border-slate-100 py-2 last:border-0 hover:bg-clinical-50">
+      <span><span class="text-sm font-medium">{{ p.full_name }}</span> <span class="font-mono text-xs text-slate-500">{{ p.case_number }}</span></span>
+      <span class="flex gap-1">{% for a in p.allergy_list|slice:":2" %}<span class="rounded bg-alert-500 px-2 py-0.5 text-xs font-bold text-white">{{ a }}</span>{% endfor %}</span>
+    </a>
+    {% empty %}<p class="text-sm text-slate-500">No patients with recorded alerts.</p>{% endfor %}
+  </section>
+  <section class="rounded border border-slate-100 bg-white p-5 shadow-card">
+    <h2 class="mb-3 border-b border-slate-100 pb-2 text-sm font-semibold">Latest camp notes</h2>
+    {% for n in recent_notes %}
+    <div class="border-b border-slate-100 py-2 last:border-0">
+      <p class="text-sm"><a class="font-medium text-clinical-600 hover:underline" href="{% url 'patient_detail' n.patient.pk %}">{{ n.patient.full_name }}</a> {% if n.incident_report %}<span class="ml-1 rounded bg-amber-50 px-1.5 py-0.5 text-xs font-semibold text-amber-600">Incident</span>{% endif %}</p>
+      <p class="line-clamp-2 text-xs text-slate-700">{{ n.observation }}</p>
+      <p class="font-mono text-xs text-slate-500">{{ n.date_recorded|date:"d M Y" }} &middot; {{ n.recorded_by }}</p>
+    </div>
+    {% empty %}<p class="text-sm text-slate-500">No camp notes yet.</p>{% endfor %}
+  </section>
+</div>
+
+<div class="mt-6 grid gap-3 sm:grid-cols-3">
+  <a href="{% url 'medication_schedule' %}" class="rounded border border-slate-100 bg-white p-4 shadow-card hover:border-clinical-500 hover:bg-clinical-50"><p class="text-sm font-semibold">Medications and treatments log</p><p class="text-xs text-slate-500">Dose record with automatic missed-dose alerts</p></a>
+  <a href="{% url 'note_list' %}" class="rounded border border-slate-100 bg-white p-4 shadow-card hover:border-clinical-500 hover:bg-clinical-50"><p class="text-sm font-semibold">Camp notes</p><p class="text-xs text-slate-500">Daily observations and incident reports</p></a>
+  {% if 'IMPORT_CSV' in chrs_perms %}<a href="{% url 'import_csv' %}" class="rounded border border-slate-100 bg-white p-4 shadow-card hover:border-clinical-500 hover:bg-clinical-50"><p class="text-sm font-semibold">Import registrations (CSV)</p><p class="text-xs text-slate-500">Bulk-load camper registrations</p></a>{% endif %}
+  {% if 'IMPORT_CSV' in chrs_perms %}<a href="{% url 'forms_sync' %}" class="rounded border border-slate-100 bg-white p-4 shadow-card hover:border-clinical-500 hover:bg-clinical-50"><p class="text-sm font-semibold">Sync from Microsoft Forms</p><p class="text-xs text-slate-500">Load registrations collected on the online form</p></a>{% endif %}
+</div>
+{% endblock %}

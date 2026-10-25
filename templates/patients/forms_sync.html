@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% block title %}Sync from Microsoft Forms{% endblock %}{% block heading %}Sync from Microsoft Forms{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-3xl space-y-4">
+<p class="text-sm text-slate-600">Families register on the online Microsoft Form. Upload the exported responses here: new children get a case number, children already in the system are skipped, and every row is checked with the same rules as the registration page.</p>
+<form method="post" enctype="multipart/form-data" class="space-y-4 rounded border border-slate-100 bg-white p-6 shadow-card">{% csrf_token %}
+  {% include "partials/field.html" %}
+  <button class="rounded bg-clinical-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-clinical-600">Sync registrations</button>
+</form>
+{% if error %}<div class="rounded border border-red-300 bg-red-50 p-4 text-sm text-red-700">{{ error }}</div>{% endif %}
+{% if result %}
+{% if result.missing %}
+<div class="rounded border border-amber-500 bg-amber-50 p-4 text-sm text-amber-600"><p class="font-semibold">Nothing was saved. These required columns were not found in the file:</p><p class="mt-1">{{ result.missing|join:", " }}</p></div>
+{% else %}
+<div class="rounded border {% if result.skipped %}border-amber-500 bg-amber-50 text-amber-600{% else %}border-confirm-500 bg-confirm-50 text-confirm-600{% endif %} p-4 text-sm">
+  <p class="font-semibold">{% if result.preview %}Preview: {{ result.created }} would be created{% else %}{{ result.created }} new child{{ result.created|pluralize:"ren" }} synced{% endif %}, {{ result.present }} already in the system, {{ result.skipped }} skipped.</p>
+  {% if result.new %}<ul class="mt-1 list-disc pl-5 text-xs">{% for n in result.new %}<li>{{ n }}</li>{% endfor %}</ul>{% endif %}
+  {% if result.errors %}<ul class="mt-2 list-disc pl-5 text-xs">{% for e in result.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+</div>
+{% endif %}
+<details class="rounded border border-slate-100 bg-white p-4 text-xs shadow-card"><summary class="cursor-pointer font-semibold">How the columns were matched</summary>
+  <table class="mt-2 w-full"><tr class="text-left text-slate-500"><th>Question in the form</th><th>Saved as</th></tr>{% for h, f in result.mapping %}<tr><td>{{ h }}</td><td>{{ f }}</td></tr>{% endfor %}</table>
+  {% if result.unmatched %}<p class="mt-2 text-slate-500">Not used: {{ result.unmatched|join:", " }}</p>{% endif %}
+</details>
+{% endif %}
+</div>
+{% endblock %}

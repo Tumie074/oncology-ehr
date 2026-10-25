@@ -1,0 +1,23 @@
+{% extends "base.html" %}{% block title %}Patients{% endblock %}{% block heading %}Patients{% endblock %}
+{% block content %}
+<form method="get" class="mb-6 flex gap-2">
+  <input name="q" value="{{ q }}" type="text" placeholder="Search by patient ID, name or diagnosis" aria-label="Search patients" class="flex-1 rounded border border-slate-300 bg-white px-3 py-2.5 text-sm placeholder:text-slate-500">
+  <button class="rounded bg-clinical-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-clinical-600">Search</button>
+  {% if 'EDIT_CLINICAL_RECORDS' in chrs_perms %}<a href="{% url 'register_patient' %}" class="whitespace-nowrap rounded border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-clinical-600 hover:bg-clinical-50">+ New patient</a>{% endif %}
+</form>
+<div class="overflow-hidden rounded border border-slate-100 bg-white shadow-card">
+  <table class="w-full text-left text-sm">
+    <thead class="bg-slate-100 text-xs uppercase tracking-wide text-slate-700"><tr><th class="px-4 py-2">Patient</th><th class="px-4 py-2">Diagnosis</th><th class="px-4 py-2">Allergies</th><th class="px-4 py-2">Guardian</th></tr></thead>
+    <tbody>
+    {% for p in patients %}
+      <tr class="border-t border-slate-100 hover:bg-clinical-50">
+        <td class="px-4 py-2.5"><a class="font-medium text-clinical-600 hover:underline" href="{% url 'patient_detail' p.pk %}">{{ p.full_name }}</a><br><span class="font-mono text-xs text-slate-500">{{ p.case_number }}</span></td>
+        <td class="px-4 py-2.5">{{ p.diagnosis }}</td>
+        <td class="px-4 py-2.5">{% for a in p.allergy_list %}<span class="mr-1 inline-flex rounded bg-alert-500 px-2 py-0.5 text-xs font-bold text-white">{{ a }}</span>{% empty %}<span class="text-xs text-slate-500">None reported</span>{% endfor %}</td>
+        <td class="px-4 py-2.5 text-xs">{{ p.guardian_name }}<br><span class="font-mono text-slate-500">{{ p.guardian_contact }}</span></td>
+      </tr>
+    {% empty %}<tr><td colspan="4" class="px-4 py-10 text-center text-sm text-slate-500">No patients found.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
