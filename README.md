@@ -32,17 +32,23 @@ Design Science Research study. Supervisor: Prof. Janet Liebenberg.
 | View audit log | no | yes | no | no |
 | Manage users (`/admin/`) | yes | no | no | no |
 
-## Microsoft Forms sync
-Registration happens outside the system on a Microsoft Form, then is synced in.
+## Microsoft Forms sync (automatic)
+Registration happens outside the system on a Microsoft Form; the system pulls the responses in by itself.
 1. Build a Form with these questions: child's first name, last name, date of birth, diagnosis, allergies (optional),
    medical notes (optional), guardian's name, guardian's contact number.
-2. In Forms: Responses > Open in Excel, and download the `.xlsx`.
-3. In the system, open **Sync from Microsoft Forms** (`/patients/sync/`) and upload the file.
-   Tick *Preview only* first to check how the questions were matched.
+2. In Forms: Responses > Open in Excel. Share that workbook ("Anyone with the link can view") and copy a direct download
+   link (it must download the `.xlsx` when opened in a private browser window).
+3. Set the Cloud Run variable `FORMS_EXPORT_URL` to that link (optionally `FORMS_AUTO_SYNC_MINUTES`, default 5).
 
-New children get case numbers `MF-001`, `MF-002`, ...; a child with the same name and date of birth is skipped, so the
-same export can be uploaded twice safely; every row passes the normal patient validation; each sync is audit-logged.
-This is a manual export-and-upload sync, not a live connection.
+The dashboard then pulls new registrations at most every 5 minutes, and **Sync now** (`/patients/sync/`, Admin or
+Physician) does it on demand. A file upload remains as a fallback, with a *Preview only* option.
+Optional push: a Power Automate flow ("When a new response is submitted" then HTTP POST) can call
+`/patients/forms-webhook/` with header `X-Sync-Token` (set `FORMS_SYNC_TOKEN`) and the answers as JSON keyed by question.
+
+New children get case numbers `MF-001`, `MF-002`, ...; a child with the same name and date of birth is skipped, so repeated
+syncs are safe; every row passes the normal patient validation; all syncs are audit-logged.
+Use dummy data only: a shared link lets anyone holding it read the workbook, which is not acceptable for real health data.
+For production use a Microsoft Graph connection or the token-protected webhook instead.
 
 ## Technology
 Django 6 and PostgreSQL, hosted on Google Cloud Run with Cloud SQL in the Johannesburg region (`africa-south1`) so that

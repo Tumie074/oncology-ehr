@@ -157,3 +157,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Serve static files straight from app/static dirs, so the site is styled even before collectstatic (local runserver)
 WHITENOISE_USE_FINDERS = True
+
+# Microsoft Forms sync: link to the shared response workbook, how often to pull it, and a token for the webhook
+FORMS_EXPORT_URL = env('FORMS_EXPORT_URL', default='')
+FORMS_AUTO_SYNC_MINUTES = env.int('FORMS_AUTO_SYNC_MINUTES', default=5)
+FORMS_SYNC_TOKEN = env('FORMS_SYNC_TOKEN', default='')

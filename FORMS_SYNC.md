@@ -1,15 +1,15 @@
 # Microsoft Forms sync
 
-Families register on a Microsoft Form. An Admin or Physician then syncs the responses into the system.
+Set these Cloud Run variables, then redeploy (`gcloud run deploy oncology-ehr --source . --region africa-south1`)
+or update them without rebuilding:
 
-1. Forms > your form > Responses > Open in Excel (download the .xlsx).
-2. System dashboard > "Sync from Microsoft Forms" (/patients/sync/) > choose the file.
-3. Tick "Preview only" first to see how the questions were matched, then untick and sync.
+    gcloud run services update oncology-ehr --region africa-south1 --update-env-vars FORMS_EXPORT_URL="https://..."
 
-Rules: new children get case numbers MF-001, MF-002 ...; a child with the same first name, last name and date of birth
-is skipped (safe to upload the same export again); every row goes through the normal patient validation;
-required columns are first name, last name, date of birth, diagnosis, guardian name, guardian contact.
-Questions are matched by their wording (e.g. "Child's first name", "Date of birth", "Guardian's contact number"); the
-page shows the matching after each upload. Only Admin and Physician can sync. Each sync is written to the audit log.
+| Variable | Meaning |
+|---|---|
+| FORMS_EXPORT_URL | https link that downloads the Forms response workbook (.xlsx) or a .csv |
+| FORMS_AUTO_SYNC_MINUTES | how often the dashboard pulls (default 5, 0 = off) |
+| FORMS_SYNC_TOKEN | secret for the optional Power Automate webhook /patients/forms-webhook/ |
 
-Deploy: the new dependency openpyxl is in requirements.txt, so rebuild/redeploy as usual (no database migration).
+Test the link: open it in a private browser window. It must start downloading the .xlsx. If it shows a web page, the
+link will not work. Then open /patients/sync/ as Admin and press "Sync now".

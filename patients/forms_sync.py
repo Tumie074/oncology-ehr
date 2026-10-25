@@ -71,6 +71,10 @@ def map_columns(headers):
 def read_rows(upload):
     """Return (headers, rows) from an .xlsx or .csv upload."""
     name = (upload.name or '').lower()
+    return _read(upload, name)
+
+
+def _read(upload, name):
     if name.endswith('.xlsx'):
         try:
             from openpyxl import load_workbook
@@ -125,6 +129,10 @@ def next_case_number():
 
 def sync(upload, save=True):
     headers, rows = read_rows(upload)
+    return sync_rows(headers, rows, save)
+
+
+def sync_rows(headers, rows, save=True):
     mapping, unmatched = map_columns(headers)
     mapped = set(mapping.values())
     missing = [f for f in REQUIRED if f not in mapped]
@@ -153,3 +161,45 @@ def sync(upload, save=True):
             result['errors'].append(f'Row {n}: ' + '; '.join(f'{k} {", ".join(v)}' for k, v in form.errors.items()))
     result['errors'] = result['errors'][:15]
     return result
+
+
+# ---------------------------------------------------------------- automatic sync
+import urllib.request
+
+from django.conf import settings
+from django.core.cache import cache
+
+MAX_BYTES = 5_000_000
+
+
+def fetch_remote(url=None):
+    """Download the Forms response workbook (or CSV) from the shared link and return (headers, rows)."""
+    url = url or settings.FORMS_EXPORT_URL
+    if not url.lower().startswith('https://'):
+        raise ValueError('FORMS_EXPORT_URL must be an https link.')
+    req = urllib.request.Request(url, headers={'User-Agent': 'oncology-ehr-forms-sync'})
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        raw = resp.read(MAX_BYTES + 1)
+    if len(raw) > MAX_BYTES:
+        raise ValueError('The shared file is too large.')
+    f = io.BytesIO(raw)
+    f.name = 'remote.xlsx' if raw[:2] == b'PK' else 'remote.csv'
+    f.file = f
+    if raw[:2] != b'PK' and raw.lstrip()[:1] == b'<':
+        raise ValueError('The link returned a web page, not the file. Share the workbook with "Anyone with the link can view" and use the download link.')
+    return _read(f, f.name)
+
+
+def sync_remote(save=True):
+    headers, rows = fetch_remote()
+    return sync_rows(headers, rows, save)
+
+
+def auto_sync_due():
+    """True at most once per FORMS_AUTO_SYNC_MINUTES (per server instance) when a link is configured."""
+    if not settings.FORMS_EXPORT_URL or settings.FORMS_AUTO_SYNC_MINUTES <= 0:
+        return False
+    if cache.get('forms_auto_sync'):
+        return False
+    cache.set('forms_auto_sync', 1, settings.FORMS_AUTO_SYNC_MINUTES * 60)
+    return True

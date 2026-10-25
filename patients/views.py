@@ -1,6 +1,12 @@
 import csv
+import hmac
 import io
+import json
+from django.conf import settings
 from django.contrib import messages
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -96,7 +102,15 @@ def import_csv(request):
 def forms_sync_view(request):
     form = FormsSyncForm(request.POST or None, request.FILES or None)
     result = error = None
-    if request.method == 'POST' and form.is_valid():
+    configured = bool(settings.FORMS_EXPORT_URL)
+    if request.method == 'POST' and request.POST.get('sync_now'):
+        try:
+            result = forms_sync.sync_remote(save=True)
+            log(request, 'FORMS_SYNC', f"{result['created']} created, {result['present']} already present, {result['skipped']} skipped")
+        except Exception as e:  # network, bad link, bad file
+            error = f'Could not sync from Microsoft Forms: {e}'
+            log(request, 'FORMS_SYNC_ERROR', str(e))
+    elif request.method == 'POST' and form.is_valid():
         preview = form.cleaned_data['preview']
         try:
             result = forms_sync.sync(form.cleaned_data['file'], save=not preview)
@@ -107,4 +121,27 @@ def forms_sync_view(request):
                 log(request, 'FORMS_SYNC_PREVIEW', f"{result['created']} would be created")
             else:
                 log(request, 'FORMS_SYNC', f"{result['created']} created, {result['present']} already present, {result['skipped']} skipped")
-    return render(request, 'patients/forms_sync.html', {'form': form, 'result': result, 'error': error})
+    return render(request, 'patients/forms_sync.html', {'form': form, 'result': result, 'error': error, 'configured': configured})
+
+
+@csrf_exempt
+@require_POST
+def forms_webhook(request):
+    """Optional push from Power Automate ("When a new response is submitted" > HTTP POST).
+    Header X-Sync-Token must equal FORMS_SYNC_TOKEN; body is JSON: one response object or a list of them,
+    keyed by the question titles."""
+    token = settings.FORMS_SYNC_TOKEN
+    if not token or not hmac.compare_digest(request.headers.get('X-Sync-Token', ''), token):
+        return JsonResponse({'error': 'unauthorised'}, status=401)
+    try:
+        data = json.loads(request.body or b'{}')
+        items = data if isinstance(data, list) else [data]
+        items = [i for i in items if isinstance(i, dict) and i]
+        headers = list(items[0].keys())
+        rows = [[i.get(h, '') for h in headers] for i in items]
+        result = forms_sync.sync_rows(headers, rows, save=True)
+    except Exception as e:
+        log(request, 'FORMS_WEBHOOK_ERROR', str(e)[:200])
+        return JsonResponse({'error': 'bad request'}, status=400)
+    log(request, 'FORMS_WEBHOOK', f"{result['created']} created, {result['present']} already present, {result['skipped']} skipped")
+    return JsonResponse({k: result[k] for k in ('created', 'present', 'skipped', 'missing')})

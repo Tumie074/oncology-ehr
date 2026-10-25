@@ -1,11 +1,20 @@
 {% extends "base.html" %}{% block title %}Sync from Microsoft Forms{% endblock %}{% block heading %}Sync from Microsoft Forms{% endblock %}
 {% block content %}
 <div class="mx-auto max-w-3xl space-y-4">
-<p class="text-sm text-slate-600">Families register on the online Microsoft Form. Upload the exported responses here: new children get a case number, children already in the system are skipped, and every row is checked with the same rules as the registration page.</p>
+<p class="text-sm text-slate-600">Families register on the online Microsoft Form and the system pulls the responses in: new children get a case number, children already in the system are skipped, and every row is checked with the same rules as the registration page.</p>
+{% if configured %}
+<form method="post" class="flex items-center justify-between gap-4 rounded border border-slate-100 bg-white p-6 shadow-card">{% csrf_token %}
+  <div><p class="text-sm font-semibold">Linked to the Microsoft Form</p><p class="text-xs text-slate-500">New registrations are also pulled in automatically (about every 5 minutes) when the dashboard is opened.</p></div>
+  <button name="sync_now" value="1" class="rounded bg-clinical-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-clinical-600">Sync now</button>
+</form>
+{% else %}
+<p class="rounded border border-amber-500 bg-amber-50 p-3 text-xs text-amber-600">No Microsoft Forms link is set (FORMS_EXPORT_URL), so automatic sync is off. You can still upload an export below.</p>
+{% endif %}
+<details {% if not configured %}open{% endif %}><summary class="cursor-pointer text-xs font-semibold text-slate-500">Or upload an export file</summary>
 <form method="post" enctype="multipart/form-data" class="space-y-4 rounded border border-slate-100 bg-white p-6 shadow-card">{% csrf_token %}
   {% include "partials/field.html" %}
   <button class="rounded bg-clinical-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-clinical-600">Sync registrations</button>
-</form>
+</form></details>
 {% if error %}<div class="rounded border border-red-300 bg-red-50 p-4 text-sm text-red-700">{{ error }}</div>{% endif %}
 {% if result %}
 {% if result.missing %}

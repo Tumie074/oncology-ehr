@@ -19,9 +19,25 @@ class CHRSLoginView(LoginView):
     redirect_authenticated_user = True
 
 
+def _auto_forms_sync(request):
+    """Pull new Microsoft Forms registrations in the background of a dashboard load (throttled, never raises)."""
+    try:
+        from patients import forms_sync
+        if forms_sync.auto_sync_due():
+            r = forms_sync.sync_remote(save=True)
+            if r['created'] or r['skipped']:
+                log(request, 'FORMS_AUTO_SYNC', f"{r['created']} created, {r['present']} already present, {r['skipped']} skipped")
+    except Exception as e:
+        try:
+            log(request, 'FORMS_SYNC_ERROR', str(e)[:250])
+        except Exception:
+            pass
+
+
 @login_required
 def dashboard(request):
     MedicationRecord.refresh_missed()
+    _auto_forms_sync(request)
     today = timezone.localdate()
     missed = MedicationRecord.objects.select_related('patient').filter(
         administered_time__isnull=True, missed=True).order_by('scheduled_time')
