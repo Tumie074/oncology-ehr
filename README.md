@@ -1,49 +1,73 @@
-# JFF Cloud Oncology Records (CHRS look and role model)
+# Cloud-Based Oncology Records System
 
-Django + PostgreSQL on Google Cloud Run. The interface and role matrix follow the offline Camp Health
-Records System (CHRS): warm paper background, teal clinical actions, red allergy banner, Camp Footprints
-lime/brown accents, Admin / Physician / Nurse / Counselor roles, idle-lock screen and an append-only audit log.
+A cloud-based electronic health record (EHR) system for a non-profit organisation (NPO) that runs camps for
+children with cancer and other serious illness. It replaces paper forms and spreadsheets with one role-controlled,
+auditable record.
 
-## The seven JFF forms (all digitised, drawn signatures)
-1. Camper Registration and Indemnity (register page, signed indemnity + witness)
-2. Camper Medication Check-In and Assessment (/forms/checkin/)
-3. Medications and Treatments weekly record (patient page > Weekly medication record)
-4. Medication / Treatment Event / Near Miss (/forms/nearmiss/, locked once filed)
-5. Visit to MedShack (/forms/medshack/)
-6. Medical Centre Check-In: Staff / Crew (/forms/crew-checkin/, Physician/Nurse only)
-7. Camp Crew Indemnity and Media Release (/forms/crew-indemnity/, Physician/Nurse only)
+Built for **ITRI671 (Honours IT, North-West University)** by Itumeleng Ntela (43528309) as the artefact of a
+Design Science Research study. Supervisor: Prof. Janet Liebenberg.
 
-## Features
-- Dashboard: search, missed-dose alert, counts, patients with allergies, latest notes
-- Patients: list/search, record with red clinical-alert banner, register, edit, CSV import
-- Camp notes: daily observations, incident reports (Physician/Nurse only), adherence-barrier flag
-- Medication log: schedule doses, "Mark given", automatic missed-dose flag (60 min grace for late doses)
-- Role-based access via Django Groups; permissions in `accounts/rbac.py` mirror CHRS `rbac.ts`
-- Audit log (Physician): logins, failed logins, views, edits, denied access, unlock attempts
-- Idle lock after `INACTIVITY_LOCK_SECONDS` (default 600 s); sessions expire after 30 min
+> **Demo data only.** This repository and the live demo contain invented patients. Do not enter real personal information.
+
+## What it does
+- **Patient records** with a red clinical-alert banner for allergies and medical precautions; search, edit, CSV import
+- **Medication log** with scheduled doses, "Mark given" and an automatic **missed-dose flag** (60-minute grace period).
+  The flag is updated when a page is opened; there are no push alerts yet
+- **Camp notes** and incident notes
+- **Seven digital forms** replacing the NPO's paper forms, with drawn signatures: registration and indemnity,
+  medication check-in, weekly medication record, near-miss event, medical-centre visit, crew check-in, crew indemnity
+- **Four roles** (Admin, Physician, Nurse, Counselor) with their own permissions
+- **Audit log** of logins, views, edits and refused actions (POPIA accountability)
+- **Microsoft Forms sync**: families register on an online Microsoft Form; an Admin or Physician uploads the exported
+  responses and the system creates new patients (see below)
+- Idle-lock screen after 10 minutes; sessions expire after 30 minutes
 
 ## Role matrix
 | Permission | Admin | Physician | Nurse | Counselor |
 |---|---|---|---|---|
 | View clinical records | yes | yes | yes | yes |
-| Edit records / mark doses / add notes | no | yes | yes | no |
-| File incident reports | no | yes | yes | no |
-| Import CSV | yes | yes | no | no |
+| Edit records, mark doses, add notes | no | yes | yes | no |
+| File incident / near-miss reports | no | yes | yes | no |
+| Import CSV, sync from Microsoft Forms | yes | yes | no | no |
 | View audit log | no | yes | no | no |
-| Manage users (/admin/) | yes | no | no | no |
+| Manage users (`/admin/`) | yes | no | no | no |
+
+## Microsoft Forms sync
+Registration happens outside the system on a Microsoft Form, then is synced in.
+1. Build a Form with these questions: child's first name, last name, date of birth, diagnosis, allergies (optional),
+   medical notes (optional), guardian's name, guardian's contact number.
+2. In Forms: Responses > Open in Excel, and download the `.xlsx`.
+3. In the system, open **Sync from Microsoft Forms** (`/patients/sync/`) and upload the file.
+   Tick *Preview only* first to check how the questions were matched.
+
+New children get case numbers `MF-001`, `MF-002`, ...; a child with the same name and date of birth is skipped, so the
+same export can be uploaded twice safely; every row passes the normal patient validation; each sync is audit-logged.
+This is a manual export-and-upload sync, not a live connection.
+
+## Technology
+Django 6 and PostgreSQL, hosted on Google Cloud Run with Cloud SQL in the Johannesburg region (`africa-south1`) so that
+personal information stays in South Africa (POPIA). Static files are served with WhiteNoise; styling is Tailwind CSS.
 
 ## Run locally
+    python -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\activate
     pip install -r requirements.txt
-    USE_SQLITE=1 python manage.py migrate
-    USE_SQLITE=1 python manage.py seed_demo --password 'choose-a-password'
-    USE_SQLITE=1 python manage.py runserver
-Demo users: admin, physician, nurse, counselor.
+    export USE_SQLITE=1                                      # Windows: set USE_SQLITE=1
+    python manage.py migrate
+    python manage.py seed_demo --password 'choose-a-password'
+    python manage.py runserver
+Demo users created by `seed_demo`: `admin`, `physician`, `nurse`, `counselor`.
 
-## Deploy (existing Cloud Run + Cloud SQL setup)
-1. Run `python manage.py migrate` against Cloud SQL (adds allergies, medical notes, audit table, role groups).
-2. Create real staff in `/admin/` (a superuser counts as Admin) and put each in one role group.
-   Do not use `seed_demo` passwords in production.
-3. Rebuild and deploy the container. Set `SECRET_KEY` and `DEBUG=False` as Cloud Run variables.
+## Deploy (Google Cloud Run)
+    gcloud run deploy oncology-ehr --source . --region africa-south1
+Database settings are kept as Cloud Run environment variables (`DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_SOCKET_HOST`,
+`DB_PORT`), together with `SECRET_KEY` and `DEBUG=False`. Never commit them. The container runs `migrate` on start.
+Create real staff in `/admin/` and put each in one role group; do not use `seed_demo` passwords in production.
 
-## Rebuild the stylesheet (only if you add new CSS classes to templates)
-    npx tailwindcss@3 -c assets/tailwind.config.js -i assets/input.css -o static/css/chrs.css --minify
+## Limitations
+One organisation, one main informant and one acceptance reviewer; evaluated with dummy data; efficiency was not
+measured; missed-dose flags appear on page load, not as alerts; no incident summary report and no offline mode.
+Planned: medication prescription record, offline mode, audit reporting for POPIA, a camp trial.
+
+## Project structure
+`accounts` (roles, login, dashboard) · `patients` (records, registration, CSV and Forms sync) · `medication` ·
+`campnotes` · `records` (the seven forms) · `audit` · `core` (settings) · `templates` · `static`
